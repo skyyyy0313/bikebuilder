@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bikes     Bike[]
+}
+
+model Bike {
+  id            String   @id @default(cuid())
+  name          String
+  userId        String
+  configuration String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Frame {
+  id                    String   @id @default(cuid())
+  brand                 String
+  model                 String
+  frameWeight           Int      // 车架重量(克)
+  forkWeight            Int?     @default(400) // 前叉重量(克)
+  seatpostWeight        Int?     @default(0)   // 座管重量(克)
+  type                  String?  // 圈刹, 碟刹
+  material              String?  // 碳纤维, 铝合金, 钢, 钛合金, 其他
+  color                 String?
+  size                  String?
+  bottomBracketStandard String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Handlebar {
+  id          String   @id @default(cuid())
+  brand       String
+  model       String
+  weight      Int
+  isIntegrated Boolean?
+  width       String?
+  stemLength  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Stem {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  length    String?
+  angle     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wheelset {
+  id           String   @id @default(cuid())
+  brand        String
+  model        String
+  weight       Int
+  rimDepth     String?
+  rimWidth     String?
+  hubType      String?
+  spokeCount   Int?
+  material     String?
+  type         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Tire {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  width     String?
+  type      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InnerTube {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  valveType String?
+  material  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BottomBracket {
+  id          String   @id @default(cuid())
+  brand       String
+  model       String
+  weight      Int
+  standard    String?
+  spindleType String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Saddle {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  width     String?
+  rails     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BarTape {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  color     String?
+  material  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pedal {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  type      String?
+  platform  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ShiftLever {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  speed     Int?
+  side      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FrontDerailleur {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  speed     Int?
+  mountType String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RearDerailleur {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  speed     Int?
+  cageSize  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Crank {
+  id          String   @id @default(cuid())
+  brand       String
+  model       String
+  weight      Int
+  length      String?
+  boltCircle  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Chainring {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  teeth     Int?
+  bolts     Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chain {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  speed     Int?
+  length    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cassette {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  weight    Int
+  speeds    Int?
+  range     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Seatpost {
+  id        String   @id @default(cuid())
+  brand     String
+  model     String
+  length    String?  // 长度
+  diameter  String?  // 规格: 27.2mm, 31.6mm, 30.9mm, 25.4mm, 31.8mm, 第三方异形座管
+  weight    Int
+  material  String?  // 材质: 碳纤维, 铝合金, 钛合金, 钢
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Brake {
+  id          String   @id @default(cuid())
+  brand       String?
+  model       String?
+  weight      Int?
+  type        String?  // 线拉圈刹, 油压圈刹, 线拉碟刹, 油压碟刹
+  mountType   String?  // flat_mount, post_mount, direct_mount
+  pistonCount Int?     // 2, 4
+  material    String?  // aluminum, carbon, steel
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
