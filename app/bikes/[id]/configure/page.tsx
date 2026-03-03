@@ -168,9 +168,55 @@ export default function ConfigurePage() {
       fetchParts(category, query.trim())
     }, 300)
   }
+
+  const findLinkedPartId = (
+    category: 'frontDerailleurs' | 'rearDerailleurs',
+    shiftPart: Part
+  ): string | null => {
+    const candidates = partsData[category]?.data || []
+    if (candidates.length === 0) return null
+
+    const shiftModel = String(shiftPart.model || '').trim().toLowerCase()
+    const shiftBrand = String(shiftPart.brand || '').trim().toLowerCase()
+
+    const exactBrandAndModel = candidates.find((part) => {
+      return (
+        String(part.model || '').trim().toLowerCase() === shiftModel &&
+        String(part.brand || '').trim().toLowerCase() === shiftBrand
+      )
+    })
+    if (exactBrandAndModel) return exactBrandAndModel.id
+
+    const exactModel = candidates.find((part) => {
+      return String(part.model || '').trim().toLowerCase() === shiftModel
+    })
+    return exactModel?.id || null
+  }
   
   const handleSelect = (category: string, partId: string | null) => {
-    setSelections(prev => ({ ...prev, [category]: partId }))
+    if (category !== 'shiftLevers' || !partId) {
+      setSelections(prev => ({ ...prev, [category]: partId }))
+      return
+    }
+
+    const shiftPart =
+      partsData.shiftLevers?.data?.find((part) => part.id === partId) ||
+      partCache[`shiftLevers:${partId}`]
+
+    if (!shiftPart) {
+      setSelections(prev => ({ ...prev, [category]: partId }))
+      return
+    }
+
+    const linkedFrontId = findLinkedPartId('frontDerailleurs', shiftPart)
+    const linkedRearId = findLinkedPartId('rearDerailleurs', shiftPart)
+
+    setSelections(prev => ({
+      ...prev,
+      [category]: partId,
+      ...(linkedFrontId ? { frontDerailleurs: linkedFrontId } : {}),
+      ...(linkedRearId ? { rearDerailleurs: linkedRearId } : {}),
+    }))
   }
   
   const handleSave = async () => {
