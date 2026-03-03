@@ -46,10 +46,22 @@ async function calculateTotalWeight(config: Record<string, string> | null): Prom
   for (const [category, partId] of Object.entries(config)) {
     if (!partId) continue
     
-    const model = modelMap[category]
-    if (!model) continue
-    
     try {
+      if (category === 'frames') {
+        const frame = await prisma.frame.findUnique({
+          where: { id: partId },
+          select: { frameWeight: true, forkWeight: true, seatpostWeight: true }
+        })
+
+        if (frame) {
+          totalWeight += (frame.frameWeight ?? 0) + (frame.forkWeight ?? 0) + (frame.seatpostWeight ?? 0)
+        }
+        continue
+      }
+
+      const model = modelMap[category]
+      if (!model) continue
+
       const part = await model.findUnique({
         where: { id: partId },
         select: { weight: true }

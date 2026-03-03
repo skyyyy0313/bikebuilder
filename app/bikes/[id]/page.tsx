@@ -9,7 +9,10 @@ interface Part {
   id: string
   brand: string
   model: string
-  weight: number
+  weight?: number
+  frameWeight?: number
+  forkWeight?: number
+  seatpostWeight?: number
   [key: string]: any
 }
 
@@ -153,9 +156,16 @@ export default function BikeDetailPage() {
     return String(value)
   }
   
+  const getPartWeight = (category: string, part: Part): number => {
+    if (category === 'frames') {
+      return (part.frameWeight || 0) + (part.forkWeight || 0) + (part.seatpostWeight || 0)
+    }
+    return part.weight || 0
+  }
+
   const calculateTotalWeight = (): number => {
-    return Object.values(partsData).reduce((total, part) => {
-      return total + (part.weight || 0)
+    return Object.entries(partsData).reduce((total, [category, part]) => {
+      return total + getPartWeight(category, part)
     }, 0)
   }
   
@@ -186,7 +196,7 @@ export default function BikeDetailPage() {
           `${part.brand} ${part.model}`,
           part.brand,
           part.model,
-          part.weight || 0,
+          getPartWeight(category.key, part),
           otherFields
         ])
       } else {
@@ -318,7 +328,7 @@ export default function BikeDetailPage() {
                       {part?.model || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {part?.weight || '-'}
+                      {part ? getPartWeight(category.key, part) : '-'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {part ? (

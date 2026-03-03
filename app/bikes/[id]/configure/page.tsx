@@ -22,6 +22,8 @@ interface Selection {
   [category: string]: string | null
 }
 
+type BrakeTypeFilter = '' | '圈刹' | '碟刹'
+
 const categoryConfigs: CategoryConfig[] = [
   { key: 'frames', title: '车架', fields: ['brand', 'model', 'frameWeight', 'forkWeight', 'seatpostWeight', 'type', 'material', 'color', 'size', 'bottomBracketStandard'] },
   { key: 'handlebars', title: '车把', fields: ['brand', 'model', 'weight', 'isIntegrated', 'width', 'stemLength'] },
@@ -94,6 +96,7 @@ export default function ConfigurePage() {
   const [partCache, setPartCache] = useState<Record<string, Part>>({})
   const [loading, setLoading] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState(false)
+  const [brakeTypeFilter, setBrakeTypeFilter] = useState<BrakeTypeFilter>('')
   const searchTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   
   const fetchParts = useCallback(async (category: string, search: string = '') => {
@@ -219,6 +222,42 @@ export default function ConfigurePage() {
     if (!categoryData) return partCache[`${category}:${selectedId}`] || null
     return categoryData.data.find(part => part.id === selectedId) || partCache[`${category}:${selectedId}`] || null
   }
+
+  const categorySupportsTypeFilter = (category: CategoryConfig): boolean => {
+    return category.fields.includes('type')
+  }
+
+  const matchesBrakeTypeFilter = (category: CategoryConfig, part: Part): boolean => {
+    if (!brakeTypeFilter || !categorySupportsTypeFilter(category)) return true
+    const typeValue = String(part.type || '')
+    return typeValue.includes(brakeTypeFilter)
+  }
+
+  useEffect(() => {
+    if (!brakeTypeFilter) return
+
+    setSelections(prev => {
+      let changed = false
+      const next = { ...prev }
+
+      for (const category of categoryConfigs) {
+        if (!categorySupportsTypeFilter(category)) continue
+        const selectedId = prev[category.key]
+        if (!selectedId) continue
+
+        const part =
+          partsData[category.key]?.data?.find(item => item.id === selectedId) ||
+          partCache[`${category.key}:${selectedId}`]
+
+        if (!part || !matchesBrakeTypeFilter(category, part)) {
+          next[category.key] = null
+          changed = true
+        }
+      }
+
+      return changed ? next : prev
+    })
+  }, [brakeTypeFilter, partsData, partCache])
   
   const formatFieldValue = (value: any): string => {
     if (value === null || value === undefined) return ''
@@ -241,12 +280,32 @@ export default function ConfigurePage() {
       }
     }, 0)
   }
+
+  const getOptionWeightText = (categoryKey: string, part: Part): string => {
+    if (categoryKey === 'frames') {
+      const total = (part.frameWeight || 0) + (part.forkWeight || 0) + (part.seatpostWeight || 0)
+      return `${total}g`
+    }
+    return `${part.weight || 0}g`
+  }
   
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">配置自行车</h1>
         <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <label className="text-sm text-gray-600">刹车类型</label>
+            <select
+              value={brakeTypeFilter}
+              onChange={(e) => setBrakeTypeFilter(e.target.value as BrakeTypeFilter)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">全部</option>
+              <option value="圈刹">圈刹</option>
+              <option value="碟刹">碟刹</option>
+            </select>
+          </div>
           <div className="text-lg">
             总重量: <span className="font-bold">{calculateTotalWeight()}g</span>
           </div>
@@ -268,7 +327,8 @@ export default function ConfigurePage() {
           const searchQuery = searchQueries[category.key] || ''
           const selectedId = selections[category.key] || ''
           const selectedOption = selectedId ? partCache[`${category.key}:${selectedId}`] : null
-          const hasSelectedInOptions = !!selectedOption && !!categoryData?.data?.some(part => part.id === selectedOption.id)
+          const filteredOptions = (categoryData?.data || []).filter((part: Part) => matchesBrakeTypeFilter(category, part))
+          const hasSelectedInOptions = !!selectedOption && filteredOptions.some(part => part.id === selectedOption.id)
           
           return (
             <div key={category.key} className="bg-white rounded-lg shadow-md p-6">
@@ -299,14 +359,14 @@ export default function ConfigurePage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">选择{category.title}</option>
-                  {selectedOption && !hasSelectedInOptions && (
+                  {selectedOption && !hasSelectedInOptions && matchesBrakeTypeFilter(category, selectedOption) && (
                     <option value={selectedOption.id}>
-                      {selectedOption.brand} {selectedOption.model} ({selectedOption.weight}g)
+                      {selectedOption.brand} {selectedOption.model} ({getOptionWeightText(category.key, selectedOption)})
                     </option>
                   )}
-                  {categoryData?.data?.map((part: Part) => (
+                  {filteredOptions.map((part: Part) => (
                     <option key={part.id} value={part.id}>
-                      {part.brand} {part.model} ({part.weight}g)
+                      {part.brand} {part.model} ({getOptionWeightText(category.key, part)})
                     </option>
                   ))}
                 </select>
